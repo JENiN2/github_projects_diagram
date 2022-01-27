@@ -7,7 +7,7 @@
 ## Description
 
 A program for automatically uploading information about projects on GitHub, with the highest number of stars. Based on the downloaded data, builds a visual diagram.
-You can choose one of eight programming languages
+You can choose one of eight programming languages: Python, JavaScript, Ruby, C, Java, Perl, Haskell and Go.
 
 #### Technologies
 
