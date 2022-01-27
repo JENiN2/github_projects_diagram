@@ -1,4 +1,3 @@
 .idea/
 __pycache__/
-python_repos.svg
-hn_submissions.svg
+*.svg
