@@ -36,28 +36,47 @@ except KeyError:
     os.exit()
 
 language = language_map[lang]
-# Создание вызова API и сохранение ответа.
-url = f'https://api.github.com/search/repositories?q=language:{language}&sort=stars'
-r = requests.get(url)
-print(f'Status code: {r.status_code}')
 
-# Сохранение ответа API в пересенной.
-response_dict = r.json()
 
-# Обработка результатов.
-print('Total Repositories', response_dict['total_count'])
+class APIResponse:
 
-# Анализ информации о репозиториях.
-repo_dicts = response_dict['items']
-names, plot_dicts = [], []
-for repo_dict in repo_dicts:
-    names.append(repo_dict['name'])
-    plot_dict = {
-        'value': repo_dict['stargazers_count'],
-        'label': repo_dict['description'],
-        'xlink': repo_dict['html_url']
-    }
-    plot_dicts.append(plot_dict)
+    def __init__(self):
+        self.response_dict = {}
+        self.names = ''
+        self.plot_dicts = []
+
+    def api_request(self):
+        # Создание вызова API и сохранение ответа.
+        url = f'https://api.github.com/search/repositories?q=language:{language}&sort=stars'
+        r = requests.get(url)
+        print(f'Status code: {r.status_code}')
+
+        # Сохранение ответа API в переменной.
+        self.response_dict = r.json()
+
+        # Обработка результатов.
+        print('Total Repositories', self.response_dict['total_count'])
+
+    def analysis(self):
+        # Анализ информации о репозиториях.
+        repo_dicts = self.response_dict.get('items')
+        print("Repositories returned:", len(repo_dicts))
+        self.names, self.plot_dicts = [], []
+        for repo_dict in repo_dicts:
+            self.names.append(repo_dict['name'])
+            plot_dict = {
+                'value': repo_dict['stargazers_count'],
+                'label': repo_dict['description'],
+                'xlink': repo_dict['html_url']
+            }
+            self.plot_dicts.append(plot_dict)
+        print(f'{self.names}-1')
+        return self.names, self.plot_dicts
+
+
+api = APIResponse()
+api.api_request()
+names, plot_dicts = api.analysis()
 
 # Построение визуализации.
 my_style = LS('#333366', base_style=LCS)
