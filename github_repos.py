@@ -2,18 +2,7 @@ import os
 import requests
 import pygal
 from pygal.style import LightColorizedStyle as LCS, LightenStyle as LS
-
-# Выбор языка программирования.
-language_map = {
-    1: 'Python',
-    2: 'JavaScript',
-    3: 'Ruby',
-    4: 'C',
-    5: 'Java',
-    6: 'Perl',
-    7: 'Haskell',
-    8: 'Go'
-}
+from constants import language_map
 
 print('\nCreating a diagram of popular projects on github.\n'
       'Сhoose a programming language:\n'
@@ -39,7 +28,6 @@ language = language_map[lang]
 
 
 class APIResponse:
-
     def __init__(self):
         self.response_dict = {}
         self.names = ''
@@ -70,28 +58,33 @@ class APIResponse:
                 'xlink': repo_dict['html_url']
             }
             self.plot_dicts.append(plot_dict)
-        print(f'{self.names}-1')
         return self.names, self.plot_dicts
+
+
+class Visual:
+    def __init__(self):
+        # Построение визуализации.
+        self.my_style = LS('#333366', base_style=LCS)
+        self.my_config = pygal.Config()
+        self.my_config.x_label_rotation = 45
+        self.my_config.show_legend = False
+        self.my_config.title_font_size = 24
+        self.my_config.label_font_size = 14
+        self.my_config.major_label_font_size = 18
+        self.my_config.truncate_label = 15
+        self.my_config.show_y_guides = False
+        self.my_config.width = 1000
+
+    def render(self):
+        chart = pygal.Bar(self.my_config, style=self.my_style)
+        chart.title = f'Most-Starred {language} Projects on GitHub'
+        chart.x_labels = names
+        chart.add('', plot_dicts)
+        chart.render_to_file(f'{language.lower()}_repos.svg')
 
 
 api = APIResponse()
 api.api_request()
 names, plot_dicts = api.analysis()
-
-# Построение визуализации.
-my_style = LS('#333366', base_style=LCS)
-my_config = pygal.Config()
-my_config.x_label_rotation = 45
-my_config.show_legend = False
-my_config.title_font_size = 24
-my_config.label_font_size = 14
-my_config.major_label_font_size = 18
-my_config.truncate_label = 15
-my_config.show_y_guides = False
-my_config.width = 1000
-
-chart = pygal.Bar(my_config, style=my_style)
-chart.title = f'Most-Starred {language} Projects on GitHub'
-chart.x_labels = names
-chart.add('', plot_dicts)
-chart.render_to_file(f'{language.lower()}_repos.svg')
+vis = Visual()
+vis.render()
