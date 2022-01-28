@@ -1,8 +1,20 @@
+import os
 import requests
 import pygal
 from pygal.style import LightColorizedStyle as LCS, LightenStyle as LS
 
 # Выбор языка программирования.
+language_map = {
+    1: 'Python',
+    2: 'JavaScript',
+    3: 'Ruby',
+    4: 'C',
+    5: 'Java',
+    6: 'Perl',
+    7: 'Haskell',
+    8: 'Go'
+}
+
 print('\nCreating a diagram of popular projects on github.\n'
       'Сhoose a programming language:\n'
       '1 - Python\n'
@@ -14,25 +26,16 @@ print('\nCreating a diagram of popular projects on github.\n'
       '7 - Haskell\n'
       '8 - Go')
 
-language = input('Enter the programming language number: ')
+lang = int(input('Enter the programming language number: '))
 
-if language == '1':
-    language = 'Python'
-elif language == '2':
-    language = 'JavaScript'
-elif language == '3':
-    language = 'Ruby'
-elif language == '4':
-    language = 'C'
-elif language == '5':
-    language = 'Java'
-elif language == '6':
-    language = 'Perl'
-elif language == '7':
-    language = 'Haskell'
-elif language == '8':
-    language = 'Go'
+try:
+    language_name = language_map[lang]
+    print(f'You choose {language_map[lang]}')
+except KeyError:
+    print('Wrong language')
+    os.exit()
 
+language = language_map[lang]
 # Создание вызова API и сохранение ответа.
 url = f'https://api.github.com/search/repositories?q=language:{language}&sort=stars'
 r = requests.get(url)
@@ -72,4 +75,4 @@ chart = pygal.Bar(my_config, style=my_style)
 chart.title = f'Most-Starred {language} Projects on GitHub'
 chart.x_labels = names
 chart.add('', plot_dicts)
-chart.render_to_file(f'{language}_repos.svg')
+chart.render_to_file(f'{language.lower()}_repos.svg')
