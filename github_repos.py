@@ -1,90 +1,84 @@
-import os
+import argparse
+import pathlib
+from urllib.parse import urljoin
+
 import requests
 import pygal
 from pygal.style import LightColorizedStyle as LCS, LightenStyle as LS
-from constants import language_map
-
-print('\nCreating a diagram of popular projects on github.\n'
-      'Сhoose a programming language:\n'
-      '1 - Python\n'
-      '2 - JavaScript\n'
-      '3 - Ruby\n'
-      '4 - C\n'
-      '5 - Java\n'
-      '6 - Perl\n'
-      '7 - Haskell\n'
-      '8 - Go')
-
-lang = int(input('Enter the programming language number: '))
-
-try:
-    language_name = language_map[lang]
-    print(f'You choose {language_map[lang]}')
-except KeyError:
-    print('Wrong language')
-    os.exit()
-
-language = language_map[lang]
 
 
-class APIResponse:
-    def __init__(self):
-        self.response_dict = {}
-        self.names = ''
-        self.plot_dicts = []
+class GitHubAPIClient:
+    BASE_URL = 'https://api.github.com/'
 
-    def api_request(self):
-        # Создание вызова API и сохранение ответа.
-        url = f'https://api.github.com/search/repositories?q=language:{language}&sort=stars'
-        r = requests.get(url)
-        print(f'Status code: {r.status_code}')
+    def send_request(self, url, method='GET'):
+        full_url = urljoin(self.BASE_URL, url)
+        response = requests.request(url=full_url, method=method)
+        response.raise_for_status()
+        return response.json()
 
-        # Сохранение ответа API в переменной.
-        self.response_dict = r.json()
-
-        # Обработка результатов.
-        print('Total Repositories', self.response_dict['total_count'])
-
-    def analysis(self):
-        # Анализ информации о репозиториях.
-        repo_dicts = self.response_dict.get('items')
-        print("Repositories returned:", len(repo_dicts))
-        self.names, self.plot_dicts = [], []
-        for repo_dict in repo_dicts:
-            self.names.append(repo_dict['name'])
-            plot_dict = {
-                'value': repo_dict['stargazers_count'],
-                'label': repo_dict['description'],
-                'xlink': repo_dict['html_url']
-            }
-            self.plot_dicts.append(plot_dict)
-        return self.names, self.plot_dicts
+    def get_repos(self, language):
+        return self.send_request(f'search/repositories?q=language:{language}&sort=stars')
 
 
-class Visual:
+class Chart:
     def __init__(self):
         # Построение визуализации.
-        self.my_style = LS('#333366', base_style=LCS)
-        self.my_config = pygal.Config()
-        self.my_config.x_label_rotation = 45
-        self.my_config.show_legend = False
-        self.my_config.title_font_size = 24
-        self.my_config.label_font_size = 14
-        self.my_config.major_label_font_size = 18
-        self.my_config.truncate_label = 15
-        self.my_config.show_y_guides = False
-        self.my_config.width = 1000
+        self.pygal_style = LS('#333366', base_style=LCS)
+        self.pygal_config = pygal.Config(
+            x_label_rotation=45,
+            show_legend=False,
+            title_font_size=24,
+            label_font_size=14,
+            major_label_font_size=18,
+            truncate_label=15,
+            show_y_guides=False,
+            width=1000
+        )
 
-    def render(self):
-        chart = pygal.Bar(self.my_config, style=self.my_style)
-        chart.title = f'Most-Starred {language} Projects on GitHub'
+    def render(self, title, names, data):
+        chart = pygal.Bar(self.pygal_config, style=self.pygal_style)
+        # chart.title =
+        chart.title = title
         chart.x_labels = names
-        chart.add('', plot_dicts)
+        chart.add('', data)
         chart.render_to_file(f'{language.lower()}_repos.svg')
 
 
-api = APIResponse()
-api.api_request()
-names, plot_dicts = api.analysis()
-vis = Visual()
-vis.render()
+def prepare_data(data):
+    # Обрабатывает данные для отрисвки.
+    repo_dicts = data.get('items')
+    print("Repositories returned:", len(repo_dicts))
+    names, plot_dicts = [], []
+    for repo_dict in repo_dicts:
+        names.append(repo_dict['name'])
+        plot_dict = {
+            'value': repo_dict['stargazers_count'],
+            'label': repo_dict['description'],
+            'xlink': repo_dict['html_url']
+        }
+        plot_dicts.append(plot_dict)
+    return names, plot_dicts
+
+
+parser = argparse.ArgumentParser(description='Creating a diagram of popular projects on github.')
+parser.add_argument(
+    '--language', type=str,
+    choices=['Python', 'JavaScript', 'Ruby', 'C', 'Java', 'Perl', 'Haskell', 'Go'],
+    required=True, help='Specify the language in which you want to get the data.'
+)
+
+parser.add_argument(
+    '--output', type=pathlib.Path, default='.',
+    help='Where to create an svg chart'
+)
+
+args = parser.parse_args()
+language = args.language
+print(f'You choose {language} language.')
+print(f'Dir for SVG chart: {args.output}')
+
+github_client = GitHubAPIClient()
+repos = github_client.get_repos(language)
+chart_names, chart_data = prepare_data(repos)
+chart = Chart()
+chart.render(title=f'Most-Starred {language} Projects on GitHub', names=chart_names, data=chart_data)
