@@ -3,7 +3,7 @@ from urllib.parse import urljoin
 
 import requests
 import pygal
-from pygal.style import LightColorizedStyle as LCS, LightenStyle as LS
+from pygal.style import LightColorizedStyle, LightenStyle
 
 
 class GitHubAPIClient:
@@ -15,8 +15,7 @@ class GitHubAPIClient:
         full_url = urljoin(self.BASE_URL, url)
         response = requests.request(url=full_url, method=method)
         print(f'Status code: {response.status_code}')
-        # TODO fix AttributeError
-        # response.raise_for_status()
+        response.raise_for_status()
         return response.json()
 
     def get_repos(self, language):
@@ -26,7 +25,7 @@ class GitHubAPIClient:
 class Chart:
     """Класс, для построения визуализации"""
     def __init__(self):
-        self.pygal_style = LS('#333366', base_style=LCS)
+        self.pygal_style = LightenStyle('#333366', base_style=LightColorizedStyle)
         self.pygal_config = pygal.Config(
             x_label_rotation=45,
             show_legend=False,
@@ -40,14 +39,14 @@ class Chart:
 
     def render(self, title, names, data):
         # Принимает обработанные данные, рисует на их основе диаграмму.
-        chart = pygal.Bar(self.pygal_config, style=self.pygal_style)
-        chart.title = title
-        chart.x_labels = names
-        chart.add('', data)
-        chart.render_to_file(f'{language.lower()}_repos.svg')
+        chart_prep = pygal.Bar(self.pygal_config, style=self.pygal_style)
+        chart_prep.title = title
+        chart_prep.x_labels = names
+        chart_prep.add('', data)
+        chart_prep.render_to_file(f'{selected_language.lower()}_repos.svg')
 
 
-def get_arguments():
+def get_language():
     # Принимает название языка и путь для сохранения диаграмы.
     parser = argparse.ArgumentParser(description='Creating a diagram of popular projects on github.')
     parser.add_argument(
@@ -57,9 +56,9 @@ def get_arguments():
     )
 
     args = parser.parse_args()
-    language = args.language
-    print(f'You choose {language} language.')
-    return language
+    lang = args.language
+    print(f'You choose {lang} language.')
+    return lang
 
 
 def prepare_data(data):
@@ -79,9 +78,9 @@ def prepare_data(data):
 
 
 if __name__ == '__main__':
-    language = get_arguments()
+    selected_language = get_language()
     github_client = GitHubAPIClient()
-    repos = github_client.get_repos(language)
+    repos = github_client.get_repos(selected_language)
     chart_names, chart_data = prepare_data(repos)
     chart = Chart()
-    chart.render(title=f'Most-Starred {language} Projects on GitHub', names=chart_names, data=chart_data)
+    chart.render(title=f'Most-Starred {selected_language} Projects on GitHub', names=chart_names, data=chart_data)
