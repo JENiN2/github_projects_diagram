@@ -12,8 +12,8 @@ You can choose one of eight programming languages: Python, JavaScript, Ruby, C, 
 #### Technologies
 
 - Python Code
-- Pygal
-- Requests: HTTP for Humans™
+- [Pygal](https://www.pygal.org/en/stable/)
+- [Requests: HTTP for Humans™](https://docs.python-requests.org/en/latest/index.html)
 
 [Back To The Top](#github-projects-diagram)
 
